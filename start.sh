@@ -1,5 +1,5 @@
 #!/bin/bash
-set -Eeuo pipefail
+set -Eeuo
 
 # Simple project launcher with auto-install for bun and uv
 # - macOS: use Homebrew to install missing tools
@@ -28,6 +28,39 @@ ensure_brew_on_macos() {
     fi
   fi
 }
+
+ensure_node() {
+  # Load nvm if available
+  export NVM_DIR="$HOME/.nvm"
+  if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+    source "$NVM_DIR/nvm.sh"
+  fi
+
+  # Check Node version
+  if command_exists node; then
+    local node_version=$(node --version | sed 's/v//' | cut -d. -f1)
+    if [[ "$node_version" -ge 20 ]]; then
+      success "Node.js is installed ($(node --version))"
+      return 0
+    else
+      warn "Node.js version $(node --version) detected, but version 20+ is required"
+    fi
+  fi
+
+  # Install nvm if not present
+  if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
+    info "Installing nvm (Node Version Manager)..."
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
+    source "$NVM_DIR/nvm.sh"
+  fi
+
+  # Install Node 22
+  info "Installing Node.js 22 via nvm..."
+  nvm install 22
+  nvm use 22
+  success "Node.js $(node --version) installed and activated"
+}
+
 
 ensure_tool() {
   local tool_name="$1"; shift
@@ -162,6 +195,11 @@ main() {
   # Ensure tools
   ensure_tool bun oven-sh/bun/bun
   ensure_tool uv uv
+
+  # Ensure Node.js 20+ for frontend
+  if (( start_frontend_flag )); then
+    ensure_node
+  fi
 
   compile
 
