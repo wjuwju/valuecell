@@ -5,6 +5,11 @@ set -Eeuo
 # - macOS: use Homebrew to install missing tools
 # - other OS: print guidance
 
+# Configure proxy for OpenRouter API access (Clash/V2Ray)
+export http_proxy=http://127.0.0.1:7897
+export https_proxy=http://127.0.0.1:7897
+export all_proxy=socks5://127.0.0.1:7897
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
 FRONTEND_DIR="$SCRIPT_DIR/frontend"
 PY_DIR="$SCRIPT_DIR/python"
@@ -66,6 +71,11 @@ ensure_tool() {
   local tool_name="$1"; shift
   local brew_formula="$1"; shift || true
 
+  # For Linux, add common install paths to PATH first
+  if [[ "$(uname -s)" == "Linux" ]]; then
+    export PATH="$HOME/.bun/bin:$HOME/.local/bin:$PATH"
+  fi
+
   if command_exists "$tool_name"; then
     success "$tool_name is installed ($($tool_name --version 2>/dev/null | head -n1 || echo version unknown))"
     return 0
@@ -81,16 +91,10 @@ ensure_tool() {
       info "Detected Linux, auto-installing $tool_name..."
       if [[ "$tool_name" == "bun" ]]; then
         curl -fsSL https://bun.sh/install | bash
-        # Add Bun default install dir to PATH (current process only)
-        if ! command_exists bun && [[ -x "$HOME/.bun/bin/bun" ]]; then
-          export PATH="$HOME/.bun/bin:$PATH"
-        fi
+        export PATH="$HOME/.bun/bin:$PATH"
       elif [[ "$tool_name" == "uv" ]]; then
         curl -LsSf https://astral.sh/uv/install.sh | sh
-        # Add uv default install dir to PATH (current process only)
-        if ! command_exists uv && [[ -x "$HOME/.local/bin/uv" ]]; then
-          export PATH="$HOME/.local/bin:$PATH"
-        fi
+        export PATH="$HOME/.local/bin:$PATH"
       else
         warn "Unknown tool: $tool_name"
       fi
