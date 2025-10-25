@@ -48,6 +48,7 @@ from valuecell.core.types import (
 )
 from valuecell.utils import resolve_db_path
 from valuecell.utils.i18n_utils import get_current_language, get_current_timezone
+from valuecell.utils.user_profile_utils import get_user_profile_metadata
 from valuecell.utils.uuid import generate_item_id, generate_task_id, generate_thread_id
 
 logger = logging.getLogger(__name__)
@@ -198,6 +199,7 @@ class AgentOrchestrator:
         """
         conversation_id = user_input.meta.conversation_id
         user_id = user_input.meta.user_id
+        agent_name = user_input.target_agent_name
 
         try:
             # Ensure conversation exists
@@ -206,7 +208,7 @@ class AgentOrchestrator:
             )
             if not conversation:
                 await self.conversation_manager.create_conversation(
-                    user_id, conversation_id=conversation_id
+                    user_id, conversation_id=conversation_id, agent_name=agent_name
                 )
                 conversation = await self.conversation_manager.get_conversation(
                     conversation_id
@@ -662,23 +664,32 @@ class AgentOrchestrator:
                 "phase": SubagentConversationPhase.START.value,
             }
             await self.conversation_manager.create_conversation(
-                plan.user_id, conversation_id=task.conversation_id
+                plan.user_id,
+                conversation_id=task.conversation_id,
+                agent_name=task.agent_name,
             )
             if task.handoff_from_super_agent:
-                yield self._response_factory.component_generator(
-                    conversation_id=conversation_id,
-                    thread_id=thread_id,
-                    task_id=task.task_id,
-                    content=json.dumps(subagent_component_content_dict),
-                    component_type=ComponentType.SUBAGENT_CONVERSATION.value,
-                    component_id=subagent_conversation_item_id,
-                    agent_name=task.agent_name,
+                subagent_conv_start_component = (
+                    self._response_factory.component_generator(
+                        conversation_id=conversation_id,
+                        thread_id=thread_id,
+                        task_id=task.task_id,
+                        content=json.dumps(subagent_component_content_dict),
+                        component_type=ComponentType.SUBAGENT_CONVERSATION.value,
+                        component_id=subagent_conversation_item_id,
+                        agent_name=task.agent_name,
+                    )
                 )
-                yield self._response_factory.thread_started(
+                yield subagent_conv_start_component
+                await self._persist_from_buffer(subagent_conv_start_component)
+
+                subagent_conv_thread_started = self._response_factory.thread_started(
                     conversation_id=task.conversation_id,
                     thread_id=thread_id,
                     user_query=task.query,
                 )
+                yield subagent_conv_thread_started
+                await self._persist_from_buffer(subagent_conv_thread_started)
             try:
                 # Register the task with TaskManager (persist in-memory)
                 await self.task_manager.update_task(task)
@@ -710,15 +721,19 @@ class AgentOrchestrator:
                     subagent_component_content_dict["phase"] = (
                         SubagentConversationPhase.END.value
                     )
-                    yield self._response_factory.component_generator(
-                        conversation_id=conversation_id,
-                        thread_id=thread_id,
-                        task_id=task.task_id,
-                        content=json.dumps(subagent_component_content_dict),
-                        component_type=ComponentType.SUBAGENT_CONVERSATION.value,
-                        component_id=subagent_conversation_item_id,
-                        agent_name=task.agent_name,
+                    subagent_conv_end_component = (
+                        self._response_factory.component_generator(
+                            conversation_id=conversation_id,
+                            thread_id=thread_id,
+                            task_id=task.task_id,
+                            content=json.dumps(subagent_component_content_dict),
+                            component_type=ComponentType.SUBAGENT_CONVERSATION.value,
+                            component_id=subagent_conversation_item_id,
+                            agent_name=task.agent_name,
+                        )
                     )
+                    yield subagent_conv_end_component
+                    await self._persist_from_buffer(subagent_conv_end_component)
 
     async def _execute_task_with_input_support(
         self, task: Task, thread_id: str, metadata: Optional[dict] = None
@@ -755,9 +770,12 @@ class AgentOrchestrator:
             # Configure Agno metadata, reference: https://docs.agno.com/examples/concepts/agent/other/agent_run_metadata#agent-run-metadata
             metadata[METADATA] = {}
 
+            # Get user profile metadata
+            user_profile_data = get_user_profile_metadata(task.user_id)
+
             # Configure Agno dependencies, reference: https://docs.agno.com/concepts/teams/dependencies#dependencies
             metadata[DEPENDENCIES] = {
-                USER_PROFILE: {},
+                USER_PROFILE: user_profile_data,
                 CURRENT_CONTEXT: {},
                 LANGUAGE: get_current_language(),
                 TIMEZONE: get_current_timezone(),

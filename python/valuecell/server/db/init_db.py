@@ -116,6 +116,52 @@ class DatabaseInitializer:
         try:
             logger.info("Creating database tables...")
             Base.metadata.create_all(bind=self.engine)
+
+            # Create conversation-related tables that are not in SQLAlchemy models
+            logger.info("Creating conversation-related tables...")
+            with self.engine.connect() as conn:
+                # Create conversations table
+                conn.execute(
+                    text("""
+                    CREATE TABLE IF NOT EXISTS conversations (
+                        conversation_id TEXT PRIMARY KEY,
+                        user_id TEXT,
+                        title TEXT,
+                        agent_name TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        status TEXT DEFAULT 'active'
+                    )
+                """)
+                )
+
+                # Create conversation_items table
+                conn.execute(
+                    text("""
+                    CREATE TABLE IF NOT EXISTS conversation_items (
+                        item_id TEXT PRIMARY KEY,
+                        role TEXT NOT NULL,
+                        event TEXT NOT NULL,
+                        conversation_id TEXT NOT NULL,
+                        thread_id TEXT,
+                        task_id TEXT,
+                        payload TEXT,
+                        agent_name TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                )
+
+                # Create index for conversation_items
+                conn.execute(
+                    text("""
+                    CREATE INDEX IF NOT EXISTS idx_item_conv_time 
+                    ON conversation_items(conversation_id, created_at)
+                """)
+                )
+
+                conn.commit()
+
             logger.info("Database tables created successfully")
             return True
 
@@ -313,7 +359,7 @@ class DatabaseInitializer:
         return None
 
     def initialize_basic_data(self) -> bool:
-        """Initialize default agent and asset data."""
+        """Initialize default agent data."""
         try:
             logger.info("Initializing default agent data...")
 
@@ -368,15 +414,6 @@ class DatabaseInitializer:
 
                 session.commit()
                 logger.info("Default agent data initialization completed")
-
-                # Initialize assets using AssetService
-                assets_initialized = self.initialize_assets_with_service()
-                if not assets_initialized:
-                    logger.warning(
-                        "Asset initialization via AssetService failed, but continuing..."
-                    )
-
-                logger.info("Default agent and asset data initialization completed")
                 return True
 
             except Exception as e:
