@@ -359,18 +359,19 @@ class AdapterManager:
             List of validated search results
         """
         # Get environment variables
-        api_key = os.getenv("OPENROUTER_API_KEY")
-        model_id = os.getenv("PRODUCT_MODEL_ID", "anthropic/claude-haiku-4.5")
+        api_key = os.getenv("DEEPSEEK_API_KEY")
+        model_id = os.getenv("PRODUCT_MODEL_ID", "deepseek-chat")
 
         if not api_key or not model_id:
             logger.warning(
-                "OPENROUTER_API_KEY is not configured, skipping fallback search"
+                "DEEPSEEK_API_KEY is not configured, skipping fallback search"
             )
             return []
 
         try:
-            # Initialize OpenAI client with OpenRouter
-            client = OpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1")
+            # Initialize OpenAI client with DeepSeek API
+            base_url = os.getenv("DEEPSEEK_API_BASE") or "https://api.deepseek.com"
+            client = OpenAI(api_key=api_key, base_url=base_url)
 
             # Create prompt to generate possible ticker formats
             prompt = f"""Given the user search query: "{query.query}"

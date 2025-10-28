@@ -5,8 +5,8 @@ from typing import Iterable, List, Optional, Sequence
 
 import aiofiles
 from agno.agent import Agent
+from agno.models.deepseek import DeepSeek
 from agno.models.google import Gemini
-from agno.models.openrouter import OpenRouter
 from edgar import Company
 from edgar.entity.filings import EntityFilings
 
@@ -208,7 +208,9 @@ async def web_search(query: str) -> str:
     ):
         return await _web_search_google(query)
 
-    model = OpenRouter(id="perplexity/sonar", max_tokens=None)
+    model_id = os.getenv("RESEARCH_AGENT_MODEL_ID", "deepseek-chat")
+    base_url = os.getenv("DEEPSEEK_API_BASE") or "https://api.deepseek.com"
+    model = DeepSeek(id=model_id, base_url=base_url)
     response = await Agent(model=model).arun(query)
     return response.content
 

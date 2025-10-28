@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import Any, AsyncGenerator, Deque, Dict, List, Optional
 
 from agno.agent import Agent
-from agno.models.openrouter import OpenRouter
+from agno.models.deepseek import DeepSeek
 
 from valuecell.core.agent.responses import streaming
 from valuecell.core.types import (
@@ -70,7 +70,7 @@ class AutoTradingAgent(BaseAgent):
         try:
             # Parser agent for natural language query parsing
             self.parser_agent = Agent(
-                model=OpenRouter(id=self.parser_model_id),
+                model=DeepSeek(id=self.parser_model_id),
                 output_schema=TradingRequest,
                 markdown=True,
             )
@@ -347,7 +347,7 @@ class AutoTradingAgent(BaseAgent):
 
         Args:
             task_id: Task ID from the request
-            model_id: Model identifier (e.g., 'deepseek/deepseek-v3.1-terminus')
+            model_id: Model identifier (e.g., 'deepseek-chat')
 
         Returns:
             Unique instance ID combining timestamp, task, and model
@@ -447,8 +447,8 @@ class AutoTradingAgent(BaseAgent):
             - "Trade Bitcoin and Ethereum with $50000" -> {{"crypto_symbols": ["BTC-USD", "ETH-USD"], "initial_capital": 50000, "use_ai_signals": true}}
             - "Start auto trading BTC-USD" -> {{"crypto_symbols": ["BTC-USD"], "initial_capital": 100000, "use_ai_signals": true}}
             - "Trade BTC with AI signals" -> {{"crypto_symbols": ["BTC-USD"], "initial_capital": 100000, "use_ai_signals": true}}
-            - "Trade BTC with AI signals using DeepSeek model" -> {{"crypto_symbols": ["BTC-USD"], "initial_capital": 100000, "use_ai_signals": true, "agent_models": ["deepseek/deepseek-v3.1-terminus"]}}
-            - "Trade Bitcoin, SOL, Eth and DOGE with 100000 capital, using x-ai/grok-4, deepseek/deepseek-v3.1-terminus model" -> {{"crypto_symbols": ["BTC-USD", "SOL-USD", "ETH-USD", "DOGE-USD"], "initial_capital": 100000, "use_ai_signals": true, "agent_models": ["x-ai/grok-4", "deepseek/deepseek-v3.1-terminus"]}}
+            - "Trade BTC with AI signals using DeepSeek model" -> {{"crypto_symbols": ["BTC-USD"], "initial_capital": 100000, "use_ai_signals": true, "agent_models": ["deepseek-chat"]}}
+            - "Trade Bitcoin, SOL, Eth and DOGE with 100000 capital, using x-ai/grok-4, deepseek-chat model" -> {{"crypto_symbols": ["BTC-USD", "SOL-USD", "ETH-USD", "DOGE-USD"], "initial_capital": 100000, "use_ai_signals": true, "agent_models": ["x-ai/grok-4", "deepseek-chat"]}}
             """
 
             response = await self.parser_agent.arun(parse_prompt)
@@ -471,14 +471,16 @@ class AutoTradingAgent(BaseAgent):
             return None
 
         try:
-            api_key = config.openrouter_api_key or os.getenv("OPENROUTER_API_KEY")
+            api_key = config.deepseek_api_key or os.getenv("DEEPSEEK_API_KEY")
             if not api_key:
-                logger.warning("OpenRouter API key not provided, AI signals disabled")
+                logger.warning("DeepSeek API key not provided, AI signals disabled")
                 return None
 
-            llm_client = OpenRouter(
+            deepseek_base_url = os.getenv("DEEPSEEK_API_BASE")
+            llm_client = DeepSeek(
                 id=config.agent_model,
                 api_key=api_key,
+                base_url=deepseek_base_url or "https://api.deepseek.com",
             )
             return AISignalGenerator(llm_client)
 

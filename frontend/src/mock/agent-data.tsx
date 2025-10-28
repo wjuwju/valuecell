@@ -66,7 +66,7 @@ export const mockAgentData = {
                 task_id: "task-b328a9abb1da4ca49e0f692ed13cb074",
                 payload: {
                   content:
-                    "🔧 **Configuration information**\n- Stock code: AAPL\n- Analysis date: 2025-10-13\n- Selected analysts: market, social, news, fundamentals\n- LLM provider: openrouter\n- Deep thinking model: openai/gpt-oss-120b\n- Quick thinking model: openai/gpt-oss-120b\n- Debug mode: No\n\n🚀 **Starting to initialize trading analysis system...**\n✅ **System initialized, starting analysis...**\n\n📈 **Market analysis report**\n",
+                    "🔧 **Configuration information**\n- Stock code: AAPL\n- Analysis date: 2025-10-13\n- Selected analysts: market, social, news, fundamentals\n- LLM provider: deepseek\n- Deep thinking model: deepseek-chat\n- Quick thinking model: deepseek-chat\n- Debug mode: No\n\n🚀 **Starting to initialize trading analysis system...**\n✅ **System initialized, starting analysis...**\n\n📈 **Market analysis report**\n",
                 },
                 role: "agent",
                 item_id: "item-07ae277e22014fe9928762d3301c9b31",

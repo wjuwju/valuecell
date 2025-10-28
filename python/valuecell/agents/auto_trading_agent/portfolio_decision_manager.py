@@ -147,7 +147,7 @@ class PortfolioDecisionManager:
 
         Args:
             config: Trading configuration
-            llm_client: OpenRouter LLM client for portfolio analysis
+            llm_client: DeepSeek LLM client for portfolio analysis
         """
         self.config = config
         self.llm_client = llm_client

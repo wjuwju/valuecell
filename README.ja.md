@@ -70,7 +70,7 @@ ValueCellは、金融アプリケーション向けのコミュニティ主導�
 - **その他**: さらに多くのエージェントを計画中...
 
 ## 柔軟な統合
-- **複数のLLMプロバイダー**: OpenRouter、OpenAI、Anthropic、Google、Ollamaをサポート
+- **複数のLLMプロバイダー**: DeepSeek、OpenAI、Anthropic、Google、Ollamaをサポート
 - **人気の市場データ**: 米国市場、暗号市場、香港市場、中国市場など
 - **マルチエージェントフレームワーク対応**: A2AプロトコルによるLangchain、Agnoをサポート
 
@@ -107,8 +107,8 @@ ValueCellは包括的なWebインターフェースを備えたPythonベース�
 ### モデルプロバイダー
 `.env`ファイルを編集して、お好みのモデルプロバイダーを設定してください:
 
-- **主なサポート**: [OpenRouter](https://openrouter.ai) - 現在、ほとんどのエージェントで主にサポートされているプロバイダー
-- **TradingAgents**はメモリの使用が必要です。OpenRouterをAPIキーとして使用する場合、Embeddingモデルのパラメータ設定が必要になります(OpenRouterはEmbeddingモデルをサポートしていないため)。TradingAgents/.env.exampleファイルを参照し、その設定をルートディレクトリの.envファイルにコピーしてください。
+- **主なサポート**: [DeepSeek](https://platform.deepseek.com/) - 現在、ほとんどのエージェントで主にサポートされているプロバイダー
+- **TradingAgents**はメモリ機能を使用します。`TradingAgents/.env.example` を参照し、Embeddingモデルのパラメータを設定してルート`.env`に反映してください。
 
 
 要件と好みに基づいて、お好みのモデルとプロバイダーを選択してください。

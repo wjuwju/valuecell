@@ -70,7 +70,7 @@ It provides a team of TOP investment Agents to help manage your portfolio.
 - **Others**: More agents are in planning...
 
 ## Flexible Integrations
-- **Multiple LLM Providers**: Support OpenRouter, OpenAI, Anthropic, Google and Ollama 
+- **Multiple LLM Providers**: Support DeepSeek, OpenAI, Anthropic, Google and Ollama 
 - **Popular Market Data**: Cover US market, Crypto market, Hong Kong market, China market and more
 - **Multi-Agent Framework Compatible**: Support Langchain, Agno by A2A Protocol
 
@@ -107,8 +107,8 @@ For optimal performance and streamlined development, we recommend installing the
 ### Model Providers
 Configure your preferred model providers by editing the ⁠`.env` file:
 
-- **Primary Support**: [OpenRouter](https://openrouter.ai) - Currently the main supported provider for most agents
-- **TradingAgents** requires the use of Memory. If you use OpenRouter as API key, configuring the Embedding model parameters will be needed (since OpenRouter does not support Embedding models). Please refer to the TradingAgents/.env.example file and copy its configuration into the .env file located in the root directory.
+- **Primary Support**: [DeepSeek](https://platform.deepseek.com/) - Currently the main supported provider for most agents
+- **TradingAgents** requires the use of Memory. Configure the Embedding model parameters as documented in `TradingAgents/.env.example` and copy them into the root `.env` file.
   
 
 Choose your preferred models and providers based on your requirements and preferences.

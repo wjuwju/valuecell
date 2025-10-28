@@ -64,7 +64,7 @@ class AISignalGenerator:
         Initialize AI signal generator
 
         Args:
-            llm_client: OpenRouter client instance
+            llm_client: DeepSeek client instance
         """
         self.llm_client = llm_client
 
@@ -72,7 +72,7 @@ class AISignalGenerator:
         self, indicators: TechnicalIndicators
     ) -> Optional[tuple[TradeAction, TradeType, str, float]]:
         """
-        Get AI-enhanced trading signal using OpenRouter model
+    Get AI-enhanced trading signal using DeepSeek model
 
         Args:
             indicators: Technical indicators for analysis

@@ -89,15 +89,15 @@ class AutoTradingConfig(BaseModel):
     )
     agent_model: str = Field(
         default=DEFAULT_AGENT_MODEL,
-        description="OpenRouter model ID for AI-enhanced trading decisions (single model per instance)",
+        description="DeepSeek model ID for AI-enhanced trading decisions (single model per instance)",
     )
     use_ai_signals: bool = Field(
         default=False,
         description="Whether to use AI model for enhanced signal generation",
     )
-    openrouter_api_key: Optional[str] = Field(
+    deepseek_api_key: Optional[str] = Field(
         default=None,
-        description="OpenRouter API key for AI model access",
+        description="DeepSeek API key for AI model access",
     )
 
     @field_validator("crypto_symbols")
