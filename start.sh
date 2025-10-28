@@ -1,9 +1,14 @@
 #!/bin/bash
-set -Eeuo pipefail
+set -Eeuo
 
 # Simple project launcher with auto-install for bun and uv
 # - macOS: use Homebrew to install missing tools
 # - other OS: print guidance
+
+# Configure proxy for OpenRouter API access (Clash/V2Ray)
+export http_proxy=http://127.0.0.1:7897
+export https_proxy=http://127.0.0.1:7897
+export all_proxy=socks5://127.0.0.1:7897
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
 FRONTEND_DIR="$SCRIPT_DIR/frontend"
@@ -29,9 +34,47 @@ ensure_brew_on_macos() {
   fi
 }
 
+ensure_node() {
+  # Load nvm if available
+  export NVM_DIR="$HOME/.nvm"
+  if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+    source "$NVM_DIR/nvm.sh"
+  fi
+
+  # Check Node version
+  if command_exists node; then
+    local node_version=$(node --version | sed 's/v//' | cut -d. -f1)
+    if [[ "$node_version" -ge 20 ]]; then
+      success "Node.js is installed ($(node --version))"
+      return 0
+    else
+      warn "Node.js version $(node --version) detected, but version 20+ is required"
+    fi
+  fi
+
+  # Install nvm if not present
+  if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
+    info "Installing nvm (Node Version Manager)..."
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
+    source "$NVM_DIR/nvm.sh"
+  fi
+
+  # Install Node 22
+  info "Installing Node.js 22 via nvm..."
+  nvm install 22
+  nvm use 22
+  success "Node.js $(node --version) installed and activated"
+}
+
+
 ensure_tool() {
   local tool_name="$1"; shift
   local brew_formula="$1"; shift || true
+
+  # For Linux, add common install paths to PATH first
+  if [[ "$(uname -s)" == "Linux" ]]; then
+    export PATH="$HOME/.bun/bin:$HOME/.local/bin:$PATH"
+  fi
 
   if command_exists "$tool_name"; then
     success "$tool_name is installed ($($tool_name --version 2>/dev/null | head -n1 || echo version unknown))"
@@ -48,16 +91,10 @@ ensure_tool() {
       info "Detected Linux, auto-installing $tool_name..."
       if [[ "$tool_name" == "bun" ]]; then
         curl -fsSL https://bun.sh/install | bash
-        # Add Bun default install dir to PATH (current process only)
-        if ! command_exists bun && [[ -x "$HOME/.bun/bin/bun" ]]; then
-          export PATH="$HOME/.bun/bin:$PATH"
-        fi
+        export PATH="$HOME/.bun/bin:$PATH"
       elif [[ "$tool_name" == "uv" ]]; then
         curl -LsSf https://astral.sh/uv/install.sh | sh
-        # Add uv default install dir to PATH (current process only)
-        if ! command_exists uv && [[ -x "$HOME/.local/bin/uv" ]]; then
-          export PATH="$HOME/.local/bin:$PATH"
-        fi
+        export PATH="$HOME/.local/bin:$PATH"
       else
         warn "Unknown tool: $tool_name"
       fi
@@ -162,6 +199,11 @@ main() {
   # Ensure tools
   ensure_tool bun oven-sh/bun/bun
   ensure_tool uv uv
+
+  # Ensure Node.js 20+ for frontend
+  if (( start_frontend_flag )); then
+    ensure_node
+  fi
 
   compile
 
